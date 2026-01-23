@@ -1,4 +1,4 @@
-import { getAccessToken, getRefreshToken, setTokens, clearTokens } from './api';
+import {clearTokens, getAccessToken, getRefreshToken, setTokens} from './api';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
@@ -16,7 +16,7 @@ export interface Message {
     content: string;
     senderId: string;
     receiverId: string;
-    isRead: boolean;
+    status: 'SENT' | 'DELIVERED' | 'READ';
     createdAt: string;
     sender?: {
         id: string;
@@ -57,8 +57,8 @@ async function refreshAccessToken(): Promise<boolean> {
         try {
             const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ refreshToken }),
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({refreshToken}),
             });
 
             if (!response.ok) {
@@ -91,7 +91,7 @@ async function refreshAccessToken(): Promise<boolean> {
 async function chatRequest<T>(endpoint: string, retry = true): Promise<T> {
     const token = getAccessToken();
     if (!token) {
-        throw { message: 'Not authenticated', statusCode: 401 };
+        throw {message: 'Not authenticated', statusCode: 401};
     }
 
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
@@ -110,7 +110,7 @@ async function chatRequest<T>(endpoint: string, retry = true): Promise<T> {
         if (typeof window !== 'undefined') {
             window.location.href = '/login';
         }
-        throw { message: 'Session expired', statusCode: 401 };
+        throw {message: 'Session expired', statusCode: 401};
     }
 
     const data = await response.json();

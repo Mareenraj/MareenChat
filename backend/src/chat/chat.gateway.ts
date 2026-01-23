@@ -7,11 +7,11 @@ import {
     WebSocketGateway,
     WebSocketServer,
 } from '@nestjs/websockets';
-import {Server, Socket} from 'socket.io';
-import {Logger, UnauthorizedException} from '@nestjs/common';
-import {JwtService} from '@nestjs/jwt';
-import {ConfigService} from '@nestjs/config';
-import {ChatService} from './chat.service';
+import { Server, Socket } from 'socket.io';
+import { Logger, UnauthorizedException } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
+import { ChatService } from './chat.service';
 
 interface AuthenticatedSocket extends Socket {
     userId: string;
@@ -64,7 +64,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
             client.join(`user:${payload.sub}`);
 
             // Notify other users about online status
-            this.server.emit('userOnline', {userId: payload.sub});
+            this.server.emit('userOnline', { userId: payload.sub });
 
             this.logger.log(`User connected: ${payload.email} (${payload.sub})`);
         } catch {
@@ -82,7 +82,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
             await this.chatService.setUserOnline(authenticatedClient.userId, false);
 
             // Notify other users about offline status
-            this.server.emit('userOffline', {userId: authenticatedClient.userId});
+            this.server.emit('userOffline', { userId: authenticatedClient.userId });
 
             this.logger.log(`User disconnected: ${authenticatedClient.userEmail}`);
         }
@@ -97,23 +97,48 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         const senderId = authenticatedClient.userId;
 
         if (!data.receiverId || !data.content?.trim()) {
-            return {error: 'Invalid message data'};
+            return { error: 'Invalid message data' };
         }
 
-        // Save message to database
+        // Save message to database (status: SENT)
         const message = await this.chatService.createMessage(
             senderId,
             data.receiverId,
             data.content.trim(),
         );
 
-        // Send to receiver if online
-        this.server.to(`user:${data.receiverId}`).emit('newMessage', message);
+        // Check if receiver is online
+        const isReceiverOnline = this.connectedUsers.has(data.receiverId);
 
-        // Also send back to sender for confirmation
+        // Send to receiver if online
+        if (isReceiverOnline) {
+            this.server.to(`user:${data.receiverId}`).emit('newMessage', message);
+        }
+
+        // Send back to sender for confirmation (with SENT status)
         client.emit('messageSent', message);
 
-        return {success: true, message};
+        return { success: true, message };
+    }
+
+    @SubscribeMessage('confirmDelivery')
+    async handleConfirmDelivery(
+        @ConnectedSocket() client: Socket,
+        @MessageBody() data: { messageId: string; senderId: string },
+    ) {
+        const authenticatedClient = client as AuthenticatedSocket;
+
+        // Mark message as delivered
+        await this.chatService.markMessagesAsDelivered(data.senderId, authenticatedClient.userId);
+
+        // Notify sender about delivery status
+        this.server.to(`user:${data.senderId}`).emit('messageStatusUpdated', {
+            senderId: data.senderId,
+            receiverId: authenticatedClient.userId,
+            status: 'DELIVERED',
+        });
+
+        return { success: true };
     }
 
     @SubscribeMessage('typing')
@@ -138,20 +163,24 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         const authenticatedClient = client as AuthenticatedSocket;
 
         // Mark all messages from sender as read
-        await this.chatService.markMessagesAsRead(data.senderId, authenticatedClient.userId);
+        const count = await this.chatService.markMessagesAsRead(data.senderId, authenticatedClient.userId);
 
         // Notify sender about read status
-        this.server.to(`user:${data.senderId}`).emit('messagesRead', {
-            by: authenticatedClient.userId,
-        });
+        if (count > 0) {
+            this.server.to(`user:${data.senderId}`).emit('messageStatusUpdated', {
+                senderId: data.senderId,
+                receiverId: authenticatedClient.userId,
+                status: 'READ',
+            });
+        }
 
-        return {success: true};
+        return { success: true };
     }
 
     @SubscribeMessage('getOnlineUsers')
     async handleGetOnlineUsers() {
         const onlineUserIds = Array.from(this.connectedUsers.keys());
-        return {onlineUsers: onlineUserIds};
+        return { onlineUsers: onlineUserIds };
     }
 
     private extractToken(client: Socket): string | null {
@@ -163,3 +192,4 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         return client.handshake.auth?.token || null;
     }
 }
+

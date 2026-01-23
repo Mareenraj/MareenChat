@@ -6,6 +6,13 @@ datasource db {
   provider = "postgresql"
 }
 
+// Message delivery status
+enum MessageStatus {
+  SENT
+  DELIVERED
+  READ
+}
+
 model User {
   id         String   @id @default(uuid())
   email      String   @unique
@@ -25,12 +32,12 @@ model User {
 }
 
 model Message {
-  id         String   @id @default(uuid())
+  id         String        @id @default(uuid())
   content    String
   senderId   String
   receiverId String
-  isRead     Boolean  @default(false)
-  createdAt  DateTime @default(now())
+  status     MessageStatus @default(SENT)
+  createdAt  DateTime      @default(now())
 
   // Relations
   sender   User @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
@@ -41,4 +48,5 @@ model Message {
   @@index([createdAt])
   @@map("messages")
 }
+
 

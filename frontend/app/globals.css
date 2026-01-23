@@ -1,59 +1,145 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff; /* Surface */
-  --foreground: #000000;
-  
-  --telegram-primary: #2481cc;
-  --telegram-bg: #eef2f5; /* App background */
-  --telegram-surface: #ffffff; /* Card/Sidebar background */
-  --telegram-gray: #707579; /* Secondary text */
-  --telegram-border: #dfe1e5;
-  --telegram-input-bg: #f1f1f1;
-  --telegram-hover: #f5f5f5;
-  
-  /* Chat Bubbles */
-  --bubble-out: #effdde;
-  --bubble-in: #ffffff;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-telegram-primary: var(--telegram-primary);
-  --color-telegram-bg: var(--telegram-bg);
-  --color-telegram-surface: var(--telegram-surface);
-  --color-telegram-gray: var(--telegram-gray);
-  --color-telegram-border: var(--telegram-border);
-  --color-telegram-input-bg: var(--telegram-input-bg);
-  --color-telegram-hover: var(--telegram-hover);
-  --color-bubble-out: var(--bubble-out);
-  --color-bubble-in: var(--bubble-in);
-  
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
+    /* Dark theme as default */
     --background: #17212b;
     --foreground: #ffffff;
-    
+
     --telegram-primary: #2f6ea5;
     --telegram-bg: #0e1621;
+    /* App background */
     --telegram-surface: #17212b;
+    /* Card/Sidebar background */
     --telegram-gray: #7d8b99;
+    /* Secondary text */
     --telegram-border: #0e1621;
     --telegram-input-bg: #242f3d;
     --telegram-hover: #202b36;
-    
+
+    /* Chat Bubbles */
     --bubble-out: #2b5278;
     --bubble-in: #182533;
-  }
+}
+
+@theme inline {
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+    --color-telegram-primary: var(--telegram-primary);
+    --color-telegram-bg: var(--telegram-bg);
+    --color-telegram-surface: var(--telegram-surface);
+    --color-telegram-gray: var(--telegram-gray);
+    --color-telegram-border: var(--telegram-border);
+    --color-telegram-input-bg: var(--telegram-input-bg);
+    --color-telegram-hover: var(--telegram-hover);
+    --color-bubble-out: var(--bubble-out);
+    --color-bubble-in: var(--bubble-in);
+
+    --font-sans: var(--font-geist-sans);
+    --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --background: #17212b;
+        --foreground: #ffffff;
+
+        --telegram-primary: #2f6ea5;
+        --telegram-bg: #0e1621;
+        --telegram-surface: #17212b;
+        --telegram-gray: #7d8b99;
+        --telegram-border: #0e1621;
+        --telegram-input-bg: #242f3d;
+        --telegram-hover: #202b36;
+
+        --bubble-out: #2b5278;
+        --bubble-in: #182533;
+    }
 }
 
 body {
-  background: var(--telegram-bg);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+    background: var(--telegram-bg);
+    color: var(--foreground);
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Mobile Responsiveness Enhancements */
+
+/* Smooth scrolling for all scrollable containers */
+* {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Hide scrollbar for cleaner mobile look */
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+
+.no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+/* Touch-friendly active states */
+@media (hover: none) and (pointer: coarse) {
+
+    button,
+    a {
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    button:active,
+    a:active {
+        opacity: 0.7;
+        transform: scale(0.98);
+    }
+}
+
+/* Mobile-specific adjustments */
+@media (max-width: 768px) {
+
+    /* Larger touch targets for mobile */
+    button {
+        min-height: 44px;
+        min-width: 44px;
+    }
+
+    /* Better input sizing on mobile */
+    input,
+    textarea {
+        font-size: 16px;
+        /* Prevents zoom on iOS */
+    }
+
+    /* Full height on mobile browsers */
+    .h-screen {
+        height: 100dvh;
+    }
+
+    /* Smooth transitions for sidebar toggle */
+    .sidebar-transition {
+        transition: transform 0.3s ease-in-out;
+    }
+}
+
+/* Safe area insets for notched devices */
+@supports (padding: env(safe-area-inset-bottom)) {
+    .safe-area-bottom {
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    .safe-area-top {
+        padding-top: env(safe-area-inset-top);
+    }
+}
+
+/* Animation for loading spinner */
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
 }

@@ -1,6 +1,6 @@
-import {Injectable, Logger} from '@nestjs/common';
-import {PrismaService} from '../prisma/prisma.service';
-import {Prisma} from '@prisma/client';
+import { Injectable, Logger } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
+import { MessageStatus, Prisma } from '@prisma/client';
 
 @Injectable()
 export class ChatService {
@@ -15,6 +15,7 @@ export class ChatService {
                 senderId,
                 receiverId,
                 content,
+                status: MessageStatus.SENT,
             },
             include: {
                 sender: {
@@ -44,8 +45,8 @@ export class ChatService {
         const messages = await this.prismaService.message.findMany({
             where: {
                 OR: [
-                    {senderId: userId1, receiverId: userId2},
-                    {senderId: userId2, receiverId: userId1},
+                    { senderId: userId1, receiverId: userId2 },
+                    { senderId: userId2, receiverId: userId1 },
                 ],
             },
             include: {
@@ -57,7 +58,7 @@ export class ChatService {
                     },
                 },
             },
-            orderBy: {createdAt: 'desc'},
+            orderBy: { createdAt: 'desc' },
             skip,
             take: limit,
         });
@@ -98,7 +99,7 @@ export class ChatService {
             SELECT
                 "senderId" AS "partnerId", COUNT (*):: int AS "unreadCount"
             FROM "messages"
-            WHERE "receiverId" = ${userId} AND "isRead" = false
+            WHERE "receiverId" = ${userId} AND "status" != 'READ'
             GROUP BY "senderId"
                 )
             SELECT u.id                          AS "partnerId",
@@ -117,24 +118,51 @@ export class ChatService {
         return conversations;
     }
 
-    async markMessagesAsRead(senderId: string, receiverId: string) {
-        await this.prismaService.message.updateMany({
+    async markMessagesAsDelivered(senderId: string, receiverId: string) {
+        const result = await this.prismaService.message.updateMany({
             where: {
                 senderId,
                 receiverId,
-                isRead: false,
+                status: MessageStatus.SENT,
             },
             data: {
-                isRead: true,
+                status: MessageStatus.DELIVERED,
             },
         });
 
-        this.logger.log(`Messages marked as read: ${senderId} -> ${receiverId}`);
+        this.logger.log(`Messages marked as delivered: ${senderId} -> ${receiverId} (${result.count} messages)`);
+        return result.count;
+    }
+
+    async markMessagesAsRead(senderId: string, receiverId: string) {
+        const result = await this.prismaService.message.updateMany({
+            where: {
+                senderId,
+                receiverId,
+                status: { not: MessageStatus.READ },
+            },
+            data: {
+                status: MessageStatus.READ,
+            },
+        });
+
+        this.logger.log(`Messages marked as read: ${senderId} -> ${receiverId} (${result.count} messages)`);
+        return result.count;
+    }
+
+    async updateMessageStatus(messageId: string, status: MessageStatus) {
+        const message = await this.prismaService.message.update({
+            where: { id: messageId },
+            data: { status },
+        });
+
+        this.logger.log(`Message ${messageId} status updated to ${status}`);
+        return message;
     }
 
     async setUserOnline(userId: string, isOnline: boolean) {
         await this.prismaService.user.update({
-            where: {id: userId},
+            where: { id: userId },
             data: {
                 isOnline,
                 lastSeen: new Date(),
@@ -146,7 +174,7 @@ export class ChatService {
         return this.prismaService.user.findMany({
             where: {
                 isVerified: true,
-                id: {not: currentUserId},
+                id: { not: currentUserId },
             },
             select: {
                 id: true,
@@ -156,8 +184,8 @@ export class ChatService {
                 lastSeen: true,
             },
             orderBy: [
-                {isOnline: 'desc'},
-                {name: 'asc'},
+                { isOnline: 'desc' },
+                { name: 'asc' },
             ],
         });
     }
@@ -166,8 +194,9 @@ export class ChatService {
         return this.prismaService.message.count({
             where: {
                 receiverId: userId,
-                isRead: false,
+                status: { not: MessageStatus.READ },
             },
         });
     }
 }
+

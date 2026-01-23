@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, FormEvent, useEffect, useRef, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import {FormEvent, Suspense, useEffect, useRef, useState} from 'react';
+import {useRouter, useSearchParams} from 'next/navigation';
 import Link from 'next/link';
-import { useAuth } from '../../context/AuthContext';
+import {useAuth} from '../../context/AuthContext';
 
 function VerifyOtpContent() {
     const searchParams = useSearchParams();
@@ -15,7 +15,7 @@ function VerifyOtpContent() {
     const [resendLoading, setResendLoading] = useState(false);
     const [resendSuccess, setResendSuccess] = useState(false);
     const [countdown, setCountdown] = useState(0);
-    const { verifyOtp, resendOtp, error, clearError } = useAuth();
+    const {verifyOtp, resendOtp, error, clearError} = useAuth();
     const router = useRouter();
     const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
@@ -108,20 +108,24 @@ function VerifyOtpContent() {
                 {/* Logo/Header */}
                 <div className="text-center mb-8">
                     <div className="w-32 h-32 mx-auto mb-4 bg-blue-100 rounded-full flex items-center justify-center">
-                        <svg viewBox="0 0 24 24" className="w-16 h-16 text-[var(--telegram-primary)]" fill="currentColor">
-                            <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z" />
+                        <svg viewBox="0 0 24 24" className="w-16 h-16 text-[var(--telegram-primary)]"
+                             fill="currentColor">
+                            <path
+                                d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/>
                         </svg>
                     </div>
                     <h1 className="text-2xl font-semibold text-[var(--foreground)]">
                         Verify Email
                     </h1>
                     <p className="text-[var(--telegram-gray)] mt-2">
-                        Enter the code sent to <span className="font-semibold text-[var(--telegram-primary)]">{email || 'your email'}</span>
+                        Enter the code sent to <span
+                        className="font-semibold text-[var(--telegram-primary)]">{email || 'your email'}</span>
                     </p>
                 </div>
 
                 {/* OTP Form Card */}
-                <div className="bg-[var(--telegram-surface)] rounded-2xl p-10 md:p-12 shadow-sm border border-[var(--telegram-border)]">
+                <div
+                    className="bg-[var(--telegram-surface)] rounded-2xl p-10 md:p-12 shadow-sm border border-[var(--telegram-border)]">
                     <form onSubmit={handleSubmit} className="space-y-8">
                         {/* Error Message */}
                         {error && (
@@ -132,7 +136,8 @@ function VerifyOtpContent() {
 
                         {/* Success Message */}
                         {resendSuccess && (
-                            <div className="bg-green-50 text-green-600 px-4 py-3 rounded-lg text-sm border border-green-100">
+                            <div
+                                className="bg-green-50 text-green-600 px-4 py-3 rounded-lg text-sm border border-green-100">
                                 OTP sent successfully!
                             </div>
                         )}
@@ -164,7 +169,9 @@ function VerifyOtpContent() {
                                 {otp.map((digit, index) => (
                                     <input
                                         key={index}
-                                        ref={(el) => { inputRefs.current[index] = el }}
+                                        ref={(el) => {
+                                            inputRefs.current[index] = el
+                                        }}
                                         type="text"
                                         inputMode="numeric"
                                         maxLength={1}
@@ -215,11 +222,12 @@ function VerifyOtpContent() {
 export default function VerifyOtpPage() {
     return (
         <Suspense fallback={
-            <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+            <div
+                className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
                 <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
             </div>
         }>
-            <VerifyOtpContent />
+            <VerifyOtpContent/>
         </Suspense>
     );
 }

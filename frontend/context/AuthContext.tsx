@@ -1,7 +1,7 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { authApi, User, clearTokens, getAccessToken } from '../lib/api';
+import React, {createContext, ReactNode, useContext, useEffect, useState} from 'react';
+import {authApi, clearTokens, getAccessToken, User} from '../lib/api';
 
 interface AuthContextType {
     user: User | null;
@@ -29,7 +29,7 @@ interface AuthProviderProps {
     children: ReactNode;
 }
 
-export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+export const AuthProvider: React.FC<AuthProviderProps> = ({children}) => {
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -79,7 +79,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         try {
             setError(null);
             const response = await authApi.signup(email, password, name);
-            return { email: response.email || email };
+            return {email: response.email || email};
         } catch (err: unknown) {
             const message = (err as { message?: string | string[] })?.message;
             const errorMsg = Array.isArray(message) ? message[0] : message || 'Signup failed';

@@ -73,8 +73,8 @@ async function refreshAccessToken(): Promise<boolean> {
         try {
             const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ refreshToken }),
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({refreshToken}),
             });
 
             if (!response.ok) {
@@ -138,7 +138,7 @@ async function apiRequest<T>(
         if (typeof window !== 'undefined') {
             window.location.href = '/login';
         }
-        throw { message: 'Session expired. Please login again.', statusCode: 401 };
+        throw {message: 'Session expired. Please login again.', statusCode: 401};
     }
 
     const data = await response.json();
@@ -158,7 +158,7 @@ export const authApi = {
     signup: async (email: string, password: string, name: string): Promise<AuthResponse> => {
         return apiRequest<AuthResponse>('/auth/signup', {
             method: 'POST',
-            body: JSON.stringify({ email, password, name }),
+            body: JSON.stringify({email, password, name}),
         });
     },
 
@@ -168,7 +168,7 @@ export const authApi = {
     verifyOtp: async (email: string, otp: string): Promise<AuthResponse> => {
         return apiRequest<AuthResponse>('/auth/verify-otp', {
             method: 'POST',
-            body: JSON.stringify({ email, otp }),
+            body: JSON.stringify({email, otp}),
         });
     },
 
@@ -178,7 +178,7 @@ export const authApi = {
     resendOtp: async (email: string): Promise<AuthResponse> => {
         return apiRequest<AuthResponse>('/auth/resend-otp', {
             method: 'POST',
-            body: JSON.stringify({ email }),
+            body: JSON.stringify({email}),
         });
     },
 
@@ -188,7 +188,7 @@ export const authApi = {
     login: async (email: string, password: string): Promise<AuthResponse> => {
         const response = await apiRequest<AuthResponse>('/auth/login', {
             method: 'POST',
-            body: JSON.stringify({ email, password }),
+            body: JSON.stringify({email, password}),
         });
 
         // Store tokens on successful login
@@ -205,12 +205,12 @@ export const authApi = {
     refreshTokens: async (): Promise<AuthResponse> => {
         const refreshToken = getRefreshToken();
         if (!refreshToken) {
-            throw { message: 'No refresh token available', statusCode: 401 };
+            throw {message: 'No refresh token available', statusCode: 401};
         }
 
         const response = await apiRequest<AuthResponse>('/auth/refresh', {
             method: 'POST',
-            body: JSON.stringify({ refreshToken }),
+            body: JSON.stringify({refreshToken}),
         }, false); // Don't retry refresh calls
 
         // Update tokens
@@ -237,7 +237,7 @@ export const authApi = {
             try {
                 await apiRequest<AuthResponse>('/auth/logout', {
                     method: 'POST',
-                    body: JSON.stringify({ refreshToken }),
+                    body: JSON.stringify({refreshToken}),
                 }, false);
             } catch {
                 // Ignore logout errors
