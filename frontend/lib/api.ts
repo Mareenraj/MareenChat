@@ -127,8 +127,9 @@ async function apiRequest<T>(
         headers,
     });
 
-    // Handle 401 Unauthorized - try to refresh token
-    if (response.status === 401 && retry && !endpoint.includes('/auth/refresh')) {
+    // Handle 401 Unauthorized - try to refresh token (but not for auth endpoints)
+    const isAuthEndpoint = endpoint.startsWith('/auth/');
+    if (response.status === 401 && retry && !isAuthEndpoint) {
         const refreshed = await refreshAccessToken();
         if (refreshed) {
             // Retry the original request with new token
