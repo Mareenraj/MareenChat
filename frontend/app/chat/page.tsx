@@ -1,13 +1,13 @@
 'use client';
 
-import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
-import {useRouter} from 'next/navigation';
-import {useAuth} from '../../context/AuthContext';
-import {chatApi, ChatUser, Conversation, Message} from '../../lib/chatApi';
-import {socketService} from '../../lib/socket';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '../../context/AuthContext';
+import { chatApi, ChatUser, Conversation, Message } from '../../lib/chatApi';
+import { socketService } from '../../lib/socket';
 
 export default function ChatPage() {
-    const {user, loading, logout} = useAuth();
+    const { user, loading, logout } = useAuth();
     const router = useRouter();
 
     // State
@@ -27,7 +27,7 @@ export default function ChatPage() {
 
     // Scroll to bottom of messages
     const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({behavior: 'smooth'});
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     };
 
     // Load users and conversations
@@ -112,34 +112,34 @@ export default function ChatPage() {
         };
 
         const handleUserTyping = (data: any) => {
-            const {userId, isTyping: typing} = data as { userId: string; isTyping: boolean };
+            const { userId, isTyping: typing } = data as { userId: string; isTyping: boolean };
             setIsTyping(typing ? userId : null);
         };
 
         const handleUserOnline = (data: any) => {
-            const {userId} = data as { userId: string };
+            const { userId } = data as { userId: string };
             setOnlineUsers((prev) => new Set([...prev, userId]));
-            setUsers((prev) => prev.map((u) => (u.id === userId ? {...u, isOnline: true} : u)));
+            setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, isOnline: true } : u)));
         };
 
         const handleUserOffline = (data: any) => {
-            const {userId} = data as { userId: string };
+            const { userId } = data as { userId: string };
             setOnlineUsers((prev) => {
                 const newSet = new Set(prev);
                 newSet.delete(userId);
                 return newSet;
             });
-            setUsers((prev) => prev.map((u) => (u.id === userId ? {...u, isOnline: false} : u)));
+            setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, isOnline: false } : u)));
         };
 
         // Handle message status updates (DELIVERED, READ)
         const handleMessageStatusUpdated = (data: any) => {
-            const {senderId, receiverId, status} = data as {
+            const { senderId, receiverId, status } = data as {
                 senderId: string;
                 receiverId: string;
                 status: 'DELIVERED' | 'READ'
             };
-            const statusOrder = {'SENT': 0, 'DELIVERED': 1, 'READ': 2};
+            const statusOrder = { 'SENT': 0, 'DELIVERED': 1, 'READ': 2 };
 
             setMessages((prev) => prev.map((m) => {
                 // Only update messages from this sender to this receiver
@@ -148,7 +148,7 @@ export default function ChatPage() {
                     const currentStatusOrder = statusOrder[m.status] || 0;
                     const newStatusOrder = statusOrder[status] || 0;
                     if (newStatusOrder > currentStatusOrder) {
-                        return {...m, status};
+                        return { ...m, status };
                     }
                 }
                 return m;
@@ -234,7 +234,7 @@ export default function ChatPage() {
     // Format time
     const formatTime = (dateString: string) => {
         const date = new Date(dateString);
-        return date.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
+        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     };
 
 
@@ -242,7 +242,7 @@ export default function ChatPage() {
         <div className="h-screen bg-[var(--telegram-bg)] flex overflow-hidden font-sans">
             {/* Sidebar (Left Column) */}
             <div
-                className={`${showContacts ? 'flex' : 'hidden'} md:flex flex-col w-full md:w-[420px] bg-[var(--telegram-surface)] border-r border-[var(--telegram-border)]`}>
+                className={`${showContacts ? 'flex' : 'hidden md:flex'} flex-col w-full md:w-[420px] bg-[var(--telegram-surface)] border-r border-[var(--telegram-border)] mobile-view-transition`}>
                 {/* Sidebar Header / Search */}
                 <div className="p-3">
                     <div className="relative">
@@ -254,9 +254,9 @@ export default function ChatPage() {
                             className="w-full pl-10 pr-4 py-2 bg-[var(--telegram-input-bg)] rounded-full text-[var(--foreground)] placeholder-[var(--telegram-gray)] outline-none focus:ring-1 focus:ring-[var(--telegram-primary)] transition-all"
                         />
                         <svg className="w-5 h-5 text-[var(--telegram-gray)] absolute left-3 top-2.5" fill="none"
-                             stroke="currentColor" viewBox="0 0 24 24">
+                            stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                         </svg>
                     </div>
                 </div>
@@ -342,7 +342,7 @@ export default function ChatPage() {
                         >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                                      d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                                    d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                             </svg>
                             <span className="text-xs font-medium hidden sm:inline">Logout</span>
                         </button>
@@ -352,7 +352,7 @@ export default function ChatPage() {
 
             {/* Chat Area (Right Column) */}
             <div
-                className={`${!showContacts || selectedUser ? 'flex' : 'hidden'} md:flex flex-col flex-1 bg-[var(--telegram-bg)] relative z-0`}>
+                className={`${!showContacts && selectedUser ? 'flex' : 'hidden md:flex'} flex-col flex-1 bg-[var(--telegram-bg)] relative z-0 mobile-view-transition`}>
                 {selectedUser ? (
                     <>
                         {/* Chat Header */}
@@ -365,7 +365,7 @@ export default function ChatPage() {
                                 >
                                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                                              d="M15 19l-7-7 7-7"/>
+                                            d="M15 19l-7-7 7-7" />
                                     </svg>
                                 </button>
                                 <div>
@@ -401,9 +401,9 @@ export default function ChatPage() {
                                     <div
                                         className="w-32 h-32 bg-[var(--telegram-primary)]/10 rounded-full flex items-center justify-center mb-4">
                                         <svg className="w-16 h-16 text-[var(--telegram-primary)]" fill="none"
-                                             stroke="currentColor" viewBox="0 0 24 24">
+                                            stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                                                  d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                                                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                                         </svg>
                                     </div>
                                     <p className="text-lg font-medium">No messages yet...</p>
@@ -421,7 +421,7 @@ export default function ChatPage() {
                                                 className={`max-w-[70%] sm:max-w-[500px] px-4 py-2 rounded-2xl shadow-sm relative ${isSender
                                                     ? 'bg-[var(--bubble-out)] rounded-br-sm'
                                                     : 'bg-[var(--bubble-in)] rounded-bl-sm'
-                                                }`}
+                                                    }`}
                                             >
                                                 <p className="text-[var(--foreground)] leading-relaxed text-[15px] whitespace-pre-wrap">{message.content}</p>
                                                 <div
@@ -436,21 +436,21 @@ export default function ChatPage() {
                                                             {message.status === 'SENT' ? (
                                                                 /* Single check - Sent */
                                                                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none"
-                                                                     xmlns="http://www.w3.org/2000/svg">
+                                                                    xmlns="http://www.w3.org/2000/svg">
                                                                     <path d="M5 13l4 4L19 7" stroke="currentColor"
-                                                                          strokeWidth="2" strokeLinecap="round"
-                                                                          strokeLinejoin="round"/>
+                                                                        strokeWidth="2" strokeLinecap="round"
+                                                                        strokeLinejoin="round" />
                                                                 </svg>
                                                             ) : (
                                                                 /* Double check - Delivered or Read */
                                                                 <svg className="w-5 h-4" viewBox="0 0 24 24" fill="none"
-                                                                     xmlns="http://www.w3.org/2000/svg">
+                                                                    xmlns="http://www.w3.org/2000/svg">
                                                                     <path d="M2 13l4 4L16 7" stroke="currentColor"
-                                                                          strokeWidth="2" strokeLinecap="round"
-                                                                          strokeLinejoin="round"/>
+                                                                        strokeWidth="2" strokeLinecap="round"
+                                                                        strokeLinejoin="round" />
                                                                     <path d="M8 13l4 4L22 7" stroke="currentColor"
-                                                                          strokeWidth="2" strokeLinecap="round"
-                                                                          strokeLinejoin="round"/>
+                                                                        strokeWidth="2" strokeLinecap="round"
+                                                                        strokeLinejoin="round" />
                                                                 </svg>
                                                             )}
                                                         </span>
@@ -461,7 +461,7 @@ export default function ChatPage() {
                                     );
                                 })
                             )}
-                            <div ref={messagesEndRef}/>
+                            <div ref={messagesEndRef} />
                         </div>
 
                         {/* Input Area */}
@@ -483,7 +483,7 @@ export default function ChatPage() {
                                     className={`p-3 rounded-full transition-all transform hover:scale-105 active:scale-95 shadow-lg ${newMessage.trim() ? 'bg-[var(--telegram-primary)] text-white hover:opacity-90' : 'bg-[var(--telegram-gray)]/30 text-[var(--telegram-gray)] cursor-not-allowed'}`}
                                 >
                                     <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                                        <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                                        <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
                                     </svg>
                                 </button>
                             </form>
