@@ -4,79 +4,83 @@ import { MessageStatus, Prisma } from '@prisma/client';
 
 @Injectable()
 export class ChatService {
-    private readonly logger = new Logger(ChatService.name);
+  private readonly logger = new Logger(ChatService.name);
 
-    constructor(private prismaService: PrismaService) {
-    }
+  constructor(private prismaService: PrismaService) {}
 
-    async createMessage(senderId: string, receiverId: string, content: string) {
-        const message = await this.prismaService.message.create({
-            data: {
-                senderId,
-                receiverId,
-                content,
-                status: MessageStatus.SENT,
-            },
-            include: {
-                sender: {
-                    select: {
-                        id: true,
-                        name: true,
-                        email: true,
-                    },
-                },
-                receiver: {
-                    select: {
-                        id: true,
-                        name: true,
-                        email: true,
-                    },
-                },
-            },
-        });
+  async createMessage(senderId: string, receiverId: string, content: string) {
+    const message = await this.prismaService.message.create({
+      data: {
+        senderId,
+        receiverId,
+        content,
+        status: MessageStatus.SENT,
+      },
+      include: {
+        sender: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        receiver: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
+    });
 
-        this.logger.log(`Message created: ${senderId} -> ${receiverId}`);
-        return message;
-    }
+    this.logger.log(`Message created: ${senderId} -> ${receiverId}`);
+    return message;
+  }
 
-    async getConversation(userId1: string, userId2: string, page = 1, limit = 50) {
-        const skip = (page - 1) * limit;
+  async getConversation(
+    userId1: string,
+    userId2: string,
+    page = 1,
+    limit = 50,
+  ) {
+    const skip = (page - 1) * limit;
 
-        const messages = await this.prismaService.message.findMany({
-            where: {
-                OR: [
-                    { senderId: userId1, receiverId: userId2 },
-                    { senderId: userId2, receiverId: userId1 },
-                ],
-            },
-            include: {
-                sender: {
-                    select: {
-                        id: true,
-                        name: true,
-                        email: true,
-                    },
-                },
-            },
-            orderBy: { createdAt: 'desc' },
-            skip,
-            take: limit,
-        });
+    const messages = await this.prismaService.message.findMany({
+      where: {
+        OR: [
+          { senderId: userId1, receiverId: userId2 },
+          { senderId: userId2, receiverId: userId1 },
+        ],
+      },
+      include: {
+        sender: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+      skip,
+      take: limit,
+    });
 
-        return messages.reverse(); // Return in chronological order
-    }
+    return messages.reverse(); // Return in chronological order
+  }
 
-    async getUserConversations(userId: string) {
-        const conversations = await this.prismaService.$queryRaw<
-            Array<{
-                partnerId: string;
-                partnerName: string;
-                partnerEmail: string;
-                lastMessage: string | null;
-                lastMessageAt: Date | null;
-                unreadCount: number;
-            }>
-        >(Prisma.sql`
+  async getUserConversations(userId: string) {
+    const conversations = await this.prismaService.$queryRaw<
+      Array<{
+        partnerId: string;
+        partnerName: string;
+        partnerEmail: string;
+        lastMessage: string | null;
+        lastMessageAt: Date | null;
+        unreadCount: number;
+      }>
+    >(Prisma.sql`
             WITH Base AS (SELECT m.*,
                                  CASE
                                      WHEN m."senderId" = ${userId} THEN m."receiverId"
@@ -115,88 +119,88 @@ export class ChatService {
             ORDER BY lm."lastMessageAt" DESC NULLS LAST
         `);
 
-        return conversations;
-    }
+    return conversations;
+  }
 
-    async markMessagesAsDelivered(senderId: string, receiverId: string) {
-        const result = await this.prismaService.message.updateMany({
-            where: {
-                senderId,
-                receiverId,
-                status: MessageStatus.SENT,
-            },
-            data: {
-                status: MessageStatus.DELIVERED,
-            },
-        });
+  async markMessagesAsDelivered(senderId: string, receiverId: string) {
+    const result = await this.prismaService.message.updateMany({
+      where: {
+        senderId,
+        receiverId,
+        status: MessageStatus.SENT,
+      },
+      data: {
+        status: MessageStatus.DELIVERED,
+      },
+    });
 
-        this.logger.log(`Messages marked as delivered: ${senderId} -> ${receiverId} (${result.count} messages)`);
-        return result.count;
-    }
+    this.logger.log(
+      `Messages marked as delivered: ${senderId} -> ${receiverId} (${result.count} messages)`,
+    );
+    return result.count;
+  }
 
-    async markMessagesAsRead(senderId: string, receiverId: string) {
-        const result = await this.prismaService.message.updateMany({
-            where: {
-                senderId,
-                receiverId,
-                status: { not: MessageStatus.READ },
-            },
-            data: {
-                status: MessageStatus.READ,
-            },
-        });
+  async markMessagesAsRead(senderId: string, receiverId: string) {
+    const result = await this.prismaService.message.updateMany({
+      where: {
+        senderId,
+        receiverId,
+        status: { not: MessageStatus.READ },
+      },
+      data: {
+        status: MessageStatus.READ,
+      },
+    });
 
-        this.logger.log(`Messages marked as read: ${senderId} -> ${receiverId} (${result.count} messages)`);
-        return result.count;
-    }
+    this.logger.log(
+      `Messages marked as read: ${senderId} -> ${receiverId} (${result.count} messages)`,
+    );
+    return result.count;
+  }
 
-    async updateMessageStatus(messageId: string, status: MessageStatus) {
-        const message = await this.prismaService.message.update({
-            where: { id: messageId },
-            data: { status },
-        });
+  async updateMessageStatus(messageId: string, status: MessageStatus) {
+    const message = await this.prismaService.message.update({
+      where: { id: messageId },
+      data: { status },
+    });
 
-        this.logger.log(`Message ${messageId} status updated to ${status}`);
-        return message;
-    }
+    this.logger.log(`Message ${messageId} status updated to ${status}`);
+    return message;
+  }
 
-    async setUserOnline(userId: string, isOnline: boolean) {
-        await this.prismaService.user.update({
-            where: { id: userId },
-            data: {
-                isOnline,
-                lastSeen: new Date(),
-            },
-        });
-    }
+  async setUserOnline(userId: string, isOnline: boolean) {
+    await this.prismaService.user.update({
+      where: { id: userId },
+      data: {
+        isOnline,
+        lastSeen: new Date(),
+      },
+    });
+  }
 
-    async getAllUsers(currentUserId: string) {
-        return this.prismaService.user.findMany({
-            where: {
-                isVerified: true,
-                id: { not: currentUserId },
-            },
-            select: {
-                id: true,
-                name: true,
-                email: true,
-                isOnline: true,
-                lastSeen: true,
-            },
-            orderBy: [
-                { isOnline: 'desc' },
-                { name: 'asc' },
-            ],
-        });
-    }
+  async getAllUsers(currentUserId: string) {
+    return this.prismaService.user.findMany({
+      where: {
+        isVerified: true,
+        id: { not: currentUserId },
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        isOnline: true,
+        lastSeen: true,
+      },
+      orderBy: [{ isOnline: 'desc' }, { name: 'asc' }],
+    });
+  }
 
-    async getUnreadCount(userId: string) {
-        return this.prismaService.message.count({
-            where: {
-                receiverId: userId,
-                status: { not: MessageStatus.READ },
-            },
-        });
-    }
+  async getUnreadCount(userId: string) {
+    return this.prismaService.message.count({
+      where: {
+        receiverId: userId,
+        status: { not: MessageStatus.READ },
+      },
+    });
+  }
 }
-

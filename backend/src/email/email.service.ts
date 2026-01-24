@@ -1,28 +1,29 @@
-import {Injectable, Logger} from '@nestjs/common';
-import {ConfigService} from '@nestjs/config';
+import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
 
 @Injectable()
 export class EmailService {
-    private transporter: nodemailer.Transporter;
-    private readonly logger = new Logger(EmailService.name);
+  private transporter: nodemailer.Transporter;
+  private readonly logger = new Logger(EmailService.name);
 
-    constructor(private configService: ConfigService) {
-        this.transporter = nodemailer.createTransport({
-            host: this.configService.get<string>('SMTP_HOST'),
-            port: parseInt(this.configService.get<string>('SMTP_PORT') || '587'),
-            secure: false, // true for 465, false for other ports
-            auth: {
-                user: this.configService.get<string>('SMTP_USER'),
-                pass: this.configService.get<string>('SMTP_PASS'),
-            },
-        });
-    }
+  constructor(private configService: ConfigService) {
+    this.transporter = nodemailer.createTransport({
+      host: this.configService.get<string>('SMTP_HOST'),
+      port: parseInt(this.configService.get<string>('SMTP_PORT') || '587'),
+      secure: false, // true for 465, false for other ports
+      auth: {
+        user: this.configService.get<string>('SMTP_USER'),
+        pass: this.configService.get<string>('SMTP_PASS'),
+      },
+    });
+  }
 
-    async sendOtpEmail(email: string, otp: string, name?: string): Promise<void> {
-        const mailFrom = this.configService.get<string>('MAIL_FROM') || 'no-reply@mareenchat.com';
+  async sendOtpEmail(email: string, otp: string, name?: string): Promise<void> {
+    const mailFrom =
+      this.configService.get<string>('MAIL_FROM') || 'no-reply@mareenchat.com';
 
-        const htmlContent = `
+    const htmlContent = `
 <!DOCTYPE html>
 <html>
 <head>
@@ -98,17 +99,17 @@ export class EmailService {
 </body>
 </html>
 `;
-        try {
-            await this.transporter.sendMail({
-                from: `"MareenChat" <${mailFrom}>`,
-                to: email,
-                subject: 'Verify Your Email - MareenChat',
-                html: htmlContent,
-            });
-            this.logger.log(`OTP email sent to ${email}`);
-        } catch (error) {
-            this.logger.error(`Failed to send OTP email to ${email}:`, error);
-            throw error;
-        }
+    try {
+      await this.transporter.sendMail({
+        from: `"MareenChat" <${mailFrom}>`,
+        to: email,
+        subject: 'Verify Your Email - MareenChat',
+        html: htmlContent,
+      });
+      this.logger.log(`OTP email sent to ${email}`);
+    } catch (error) {
+      this.logger.error(`Failed to send OTP email to ${email}:`, error);
+      throw error;
     }
+  }
 }

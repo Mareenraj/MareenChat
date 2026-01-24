@@ -45,37 +45,6 @@ class SocketService {
     private maxReconnectAttempts = 3;
 
     /**
-     * Refresh token and get new access token
-     */
-    private async refreshToken(): Promise<boolean> {
-        const refreshToken = getRefreshToken();
-        if (!refreshToken) return false;
-
-        try {
-            const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({refreshToken}),
-            });
-
-            if (!response.ok) {
-                clearTokens();
-                return false;
-            }
-
-            const data = await response.json();
-            if (data.accessToken && data.refreshToken) {
-                setTokens(data.accessToken, data.refreshToken);
-                return true;
-            }
-            return false;
-        } catch {
-            clearTokens();
-            return false;
-        }
-    }
-
-    /**
      * Connect to the WebSocket server
      */
     connect(): Socket | null {
@@ -227,6 +196,37 @@ class SocketService {
      */
     off(event: string, callback: (...args: unknown[]) => void): void {
         this.listeners.get(event)?.delete(callback);
+    }
+
+    /**
+     * Refresh token and get new access token
+     */
+    private async refreshToken(): Promise<boolean> {
+        const refreshToken = getRefreshToken();
+        if (!refreshToken) return false;
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({refreshToken}),
+            });
+
+            if (!response.ok) {
+                clearTokens();
+                return false;
+            }
+
+            const data = await response.json();
+            if (data.accessToken && data.refreshToken) {
+                setTokens(data.accessToken, data.refreshToken);
+                return true;
+            }
+            return false;
+        } catch {
+            clearTokens();
+            return false;
+        }
     }
 
     /**

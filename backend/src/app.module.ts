@@ -1,24 +1,22 @@
-import {Module} from '@nestjs/common';
-import {ConfigModule} from '@nestjs/config';
-import {PrismaModule} from './prisma/prisma.module';
-import {RedisModule} from './redis/redis.module';
-import {EmailModule} from './email/email.module';
-import {AuthModule} from './auth/auth.module';
-import {ChatModule} from './chat/chat.module';
+import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import { PrismaModule } from './prisma/prisma.module';
+import { RedisModule } from './redis/redis.module';
+import { EmailModule } from './email/email.module';
+import { AuthModule } from './auth/auth.module';
+import { ChatModule } from './chat/chat.module';
 
 @Module({
-    imports: [
-        ConfigModule.forRoot({
-            isGlobal: true,
-            envFilePath: '.env',
-        }),
-        PrismaModule,
-        RedisModule,
-        EmailModule,
-        AuthModule,
-        ChatModule,
-    ],
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: '.env',
+    }),
+    PrismaModule,
+    RedisModule,
+    EmailModule,
+    AuthModule,
+    ChatModule,
+  ],
 })
-export class AppModule {
-}
-
+export class AppModule {}
