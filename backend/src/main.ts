@@ -7,7 +7,10 @@ async function bootstrap() {
 
   // Enable CORS for frontend
   app.enableCors({
-    origin: ['http://localhost:3000', 'http://localhost:3001'],
+    origin: [
+      'http://localhost:3000',
+      'https://mareen-chat-6hg3imqdh-mareenraj7v2-7285s-projects.vercel.app',
+    ],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     credentials: true,
   });
