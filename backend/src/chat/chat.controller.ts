@@ -1,11 +1,20 @@
-import { Controller, Get, Query, Req, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Query,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { ChatService } from './chat.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @Controller('chat')
 @UseGuards(JwtAuthGuard)
 export class ChatController {
-  constructor(private chatService: ChatService) {}
+  constructor(private chatService: ChatService) { }
 
   @Get('users')
   async getUsers(@Req() req: any) {
@@ -31,5 +40,20 @@ export class ChatController {
   async getUnreadCount(@Req() req: any) {
     const count = await this.chatService.getUnreadCount(req.user.id);
     return { unreadCount: count };
+  }
+
+  @Get('blocked')
+  async getBlockedUsers(@Req() req: any) {
+    return this.chatService.getBlockedUsers(req.user.id);
+  }
+
+  @Post('block/:userId')
+  async blockUser(@Req() req: any, @Param('userId') blockedId: string) {
+    return this.chatService.blockUser(req.user.id, blockedId);
+  }
+
+  @Delete('block/:userId')
+  async unblockUser(@Req() req: any, @Param('userId') blockedId: string) {
+    return this.chatService.unblockUser(req.user.id, blockedId);
   }
 }

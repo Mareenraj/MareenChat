@@ -32,8 +32,8 @@ export default function RegisterPage() {
             return;
         }
 
-        if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(password)) {
-            setLocalError('Password must contain uppercase, lowercase, and a number');
+        if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*])/.test(password)) {
+            setLocalError('Password must contain uppercase, lowercase, number, and a special character');
             return;
         }
 

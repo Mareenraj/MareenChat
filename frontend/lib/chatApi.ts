@@ -1,4 +1,4 @@
-import {clearTokens, getAccessToken, getRefreshToken, setTokens} from './api';
+import { clearTokens, getAccessToken, getRefreshToken, setTokens } from './api';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
@@ -18,6 +18,7 @@ export interface Message {
     receiverId: string;
     status: 'SENT' | 'DELIVERED' | 'READ';
     createdAt: string;
+    isDeleted?: boolean;
     sender?: {
         id: string;
         name: string;
@@ -57,8 +58,8 @@ async function refreshAccessToken(): Promise<boolean> {
         try {
             const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
                 method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({refreshToken}),
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ refreshToken }),
             });
 
             if (!response.ok) {
@@ -88,13 +89,20 @@ async function refreshAccessToken(): Promise<boolean> {
 /**
  * API request helper with auto token refresh
  */
-async function chatRequest<T>(endpoint: string, retry = true): Promise<T> {
+async function chatRequest<T>(
+    endpoint: string,
+    options?: { method?: string; retry?: boolean }
+): Promise<T> {
+    const retry = options?.retry !== false;
+    const method = options?.method || 'GET';
+
     const token = getAccessToken();
     if (!token) {
-        throw {message: 'Not authenticated', statusCode: 401};
+        throw { message: 'Not authenticated', statusCode: 401 };
     }
 
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        method,
         headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`,
@@ -105,12 +113,12 @@ async function chatRequest<T>(endpoint: string, retry = true): Promise<T> {
     if (response.status === 401 && retry) {
         const refreshed = await refreshAccessToken();
         if (refreshed) {
-            return chatRequest<T>(endpoint, false);
+            return chatRequest<T>(endpoint, { ...options, retry: false });
         }
         if (typeof window !== 'undefined') {
             window.location.href = '/login';
         }
-        throw {message: 'Session expired', statusCode: 401};
+        throw { message: 'Session expired', statusCode: 401 };
     }
 
     const data = await response.json();
@@ -150,6 +158,27 @@ export const chatApi = {
      */
     getUnreadCount: async (): Promise<{ unreadCount: number }> => {
         return chatRequest<{ unreadCount: number }>('/chat/unread');
+    },
+
+    /**
+     * Get list of blocked users
+     */
+    getBlockedUsers: async (): Promise<ChatUser[]> => {
+        return chatRequest<ChatUser[]>('/chat/blocked');
+    },
+
+    /**
+     * Block a user
+     */
+    blockUser: async (userId: string): Promise<{ message: string }> => {
+        return chatRequest<{ message: string }>(`/chat/block/${userId}`, { method: 'POST' });
+    },
+
+    /**
+     * Unblock a user
+     */
+    unblockUser: async (userId: string): Promise<{ message: string }> => {
+        return chatRequest<{ message: string }>(`/chat/block/${userId}`, { method: 'DELETE' });
     },
 };
 

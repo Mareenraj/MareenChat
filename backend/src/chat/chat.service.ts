@@ -1,4 +1,9 @@
-import { Injectable, Logger } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { MessageStatus, Prisma } from '@prisma/client';
 
@@ -6,7 +11,7 @@ import { MessageStatus, Prisma } from '@prisma/client';
 export class ChatService {
   private readonly logger = new Logger(ChatService.name);
 
-  constructor(private prismaService: PrismaService) {}
+  constructor(private prismaService: PrismaService) { }
 
   async createMessage(senderId: string, receiverId: string, content: string) {
     const message = await this.prismaService.message.create({
@@ -158,16 +163,6 @@ export class ChatService {
     return result.count;
   }
 
-  async updateMessageStatus(messageId: string, status: MessageStatus) {
-    const message = await this.prismaService.message.update({
-      where: { id: messageId },
-      data: { status },
-    });
-
-    this.logger.log(`Message ${messageId} status updated to ${status}`);
-    return message;
-  }
-
   async setUserOnline(userId: string, isOnline: boolean) {
     await this.prismaService.user.update({
       where: { id: userId },
@@ -195,6 +190,38 @@ export class ChatService {
     });
   }
 
+  async deleteMessageForEveryone(messageId: string, requesterId: string) {
+    const message = await this.prismaService.message.findUnique({
+      where: { id: messageId },
+      select: { id: true, senderId: true, receiverId: true, isDeleted: true },
+    });
+
+    if (!message) {
+      throw new NotFoundException('Unknown message');
+    }
+
+    if (message.senderId !== requesterId) {
+      throw new ForbiddenException('You can delete your own message only.');
+    }
+
+    if (message.isDeleted) {
+      return message;
+    }
+    return this.prismaService.message.update({
+      where: { id: messageId },
+      data: {
+        isDeleted: true,
+        content: 'This message was deleted.',
+      },
+      select: {
+        id: true,
+        senderId: true,
+        receiverId: true,
+        isDeleted: true,
+      },
+    });
+  }
+
   async getUnreadCount(userId: string) {
     return this.prismaService.message.count({
       where: {
@@ -202,5 +229,79 @@ export class ChatService {
         status: { not: MessageStatus.READ },
       },
     });
+  }
+
+  async blockUser(blockerId: string, blockedId: string) {
+    if (blockerId === blockedId) {
+      throw new ForbiddenException('You cannot block yourself');
+    }
+
+    // Check if already blocked
+    const existing = await this.prismaService.blockedUser.findUnique({
+      where: {
+        blockerId_blockedId: { blockerId, blockedId },
+      },
+    });
+
+    if (existing) {
+      return { message: 'User already blocked' };
+    }
+
+    await this.prismaService.blockedUser.create({
+      data: { blockerId, blockedId },
+    });
+
+    this.logger.log(`User ${blockerId} blocked ${blockedId}`);
+    return { message: 'User blocked successfully' };
+  }
+
+  async unblockUser(blockerId: string, blockedId: string) {
+    const existing = await this.prismaService.blockedUser.findUnique({
+      where: {
+        blockerId_blockedId: { blockerId, blockedId },
+      },
+    });
+
+    if (!existing) {
+      throw new NotFoundException('User is not blocked');
+    }
+
+    await this.prismaService.blockedUser.delete({
+      where: {
+        blockerId_blockedId: { blockerId, blockedId },
+      },
+    });
+
+    this.logger.log(`User ${blockerId} unblocked ${blockedId}`);
+    return { message: 'User unblocked successfully' };
+  }
+
+  async getBlockedUsers(userId: string) {
+    const blocked = await this.prismaService.blockedUser.findMany({
+      where: { blockerId: userId },
+      include: {
+        blocked: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
+    });
+
+    return blocked.map((b) => b.blocked);
+  }
+
+  async isBlocked(userId1: string, userId2: string): Promise<boolean> {
+    const block = await this.prismaService.blockedUser.findFirst({
+      where: {
+        OR: [
+          { blockerId: userId1, blockedId: userId2 },
+          { blockerId: userId2, blockedId: userId1 },
+        ],
+      },
+    });
+    return !!block;
   }
 }

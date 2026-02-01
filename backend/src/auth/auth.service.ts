@@ -25,7 +25,7 @@ export class AuthService {
     private emailService: EmailService,
     private jwtService: JwtService,
     private configService: ConfigService,
-  ) {}
+  ) { }
 
   async signup(signupDto: SignupDto) {
     const { email, password, name } = signupDto;
@@ -237,6 +237,27 @@ export class AuthService {
     }
 
     return user;
+  }
+
+  async deleteAccount(userId: string) {
+    const user = await this.prismaService.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Delete user (messages are cascade deleted due to Prisma schema)
+    await this.prismaService.user.delete({
+      where: { id: userId },
+    });
+
+    this.logger.log(`User account deleted: ${user.email}`);
+
+    return {
+      message: 'Account deleted successfully',
+    };
   }
 
   private generateOtp(): string {

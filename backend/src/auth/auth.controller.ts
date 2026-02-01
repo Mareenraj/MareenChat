@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -20,7 +21,7 @@ import { JwtAuthGuard, JwtRefreshGuard } from './guards';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(private authService: AuthService) { }
 
   @Post('signup')
   @HttpCode(HttpStatus.CREATED)
@@ -68,5 +69,12 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   async getProfile(@Req() req: any) {
     return this.authService.getProfile(req.user.id);
+  }
+
+  @Delete('account')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  async deleteAccount(@Req() req: any) {
+    return this.authService.deleteAccount(req.user.id);
   }
 }

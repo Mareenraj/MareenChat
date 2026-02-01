@@ -14,6 +14,14 @@ enum MessageStatus {
   READ
 }
 
+// File transfer status
+enum FileTransferStatus {
+  PENDING
+  UPLOADING
+  COMPLETE
+  FAILED
+}
+
 model User {
   id         String   @id @default(uuid())
   email      String   @unique
@@ -26,26 +34,85 @@ model User {
   updatedAt  DateTime @updatedAt
 
   // Relations
-  sentMessages     Message[] @relation("SentMessages")
-  receivedMessages Message[] @relation("ReceivedMessages")
+  sentMessages     Message[]       @relation("SentMessages")
+  receivedMessages Message[]       @relation("ReceivedMessages")
+  blockedUsers     BlockedUser[]   @relation("Blocker")
+  blockedBy        BlockedUser[]   @relation("Blocked")
+  fileTransfers    FileTransfer[]
 
   @@map("users")
 }
 
 model Message {
-  id         String        @id @default(uuid())
+  id         String           @id @default(uuid())
   content    String
   senderId   String
   receiverId String
-  status     MessageStatus @default(SENT)
-  createdAt  DateTime      @default(now())
-
+  status     MessageStatus    @default(SENT)
+  createdAt  DateTime         @default(now())
+  isDeleted  Boolean          @default(false)
+  
   // Relations
-  sender   User @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
-  receiver User @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+  sender      User             @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver    User             @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+  attachments FileAttachment[]
 
   @@index([senderId])
   @@index([receiverId])
   @@index([createdAt])
   @@map("messages")
+}
+
+model BlockedUser {
+  id        String   @id @default(uuid())
+  blockerId String
+  blockedId String
+  createdAt DateTime @default(now())
+
+  // Relations
+  blocker User @relation("Blocker", fields: [blockerId], references: [id], onDelete: Cascade)
+  blocked User @relation("Blocked", fields: [blockedId], references: [id], onDelete: Cascade)
+
+  @@unique([blockerId, blockedId])
+  @@index([blockerId])
+  @@index([blockedId])
+  @@map("blocked_users")
+}
+
+model FileTransfer {
+  id             String             @id @default(uuid())
+  filename       String
+  originalName   String
+  mimeType       String
+  size           BigInt
+  chunkSize      Int                @default(5242880) // 5MB
+  totalChunks    Int
+  uploadedChunks Int                @default(0)
+  status         FileTransferStatus @default(PENDING)
+  uploaderId     String
+  uploader       User               @relation(fields: [uploaderId], references: [id], onDelete: Cascade)
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  expiresAt      DateTime           // 2 days after completion
+
+  @@index([uploaderId])
+  @@index([status])
+  @@index([expiresAt])
+  @@map("file_transfers")
+}
+
+model FileAttachment {
+  id           String   @id @default(uuid())
+  filename     String
+  originalName String
+  mimeType     String
+  size         BigInt
+  expiresAt    DateTime // 2 days after upload
+  messageId    String
+  message      Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
+
+  @@index([messageId])
+  @@index([expiresAt])
+  @@map("file_attachments")
 }

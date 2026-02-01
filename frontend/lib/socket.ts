@@ -1,5 +1,5 @@
-import {io, Socket} from 'socket.io-client';
-import {clearTokens, getAccessToken, getRefreshToken, setTokens} from './api';
+import { io, Socket } from 'socket.io-client';
+import { clearTokens, getAccessToken, getRefreshToken, setTokens } from './api';
 
 const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001';
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
@@ -12,6 +12,7 @@ export interface Message {
     receiverId: string;
     status: 'SENT' | 'DELIVERED' | 'READ';
     createdAt: string;
+    isDeleted?: boolean;
     sender?: {
         id: string;
         name: string;
@@ -64,7 +65,7 @@ class SocketService {
         }
 
         this.socket = io(`${SOCKET_URL}/chat`, {
-            auth: {token},
+            auth: { token },
             extraHeaders: {
                 Authorization: `Bearer ${token}`,
             },
@@ -149,29 +150,29 @@ class SocketService {
     /**
      * Send a message
      */
-    sendMessage(receiverId: string, content: string): void {
-        this.socket?.emit('sendMessage', {receiverId, content});
+    sendMessage(receiverId: string, content: string, callback?: (response: { error?: string }) => void): void {
+        this.socket?.emit('sendMessage', { receiverId, content }, callback);
     }
 
     /**
      * Send typing indicator
      */
     sendTyping(receiverId: string, isTyping: boolean): void {
-        this.socket?.emit('typing', {receiverId, isTyping});
+        this.socket?.emit('typing', { receiverId, isTyping });
     }
 
     /**
      * Mark messages as read
      */
     markAsRead(senderId: string): void {
-        this.socket?.emit('markAsRead', {senderId});
+        this.socket?.emit('markAsRead', { senderId });
     }
 
     /**
      * Confirm message delivery
      */
     confirmDelivery(messageId: string, senderId: string): void {
-        this.socket?.emit('confirmDelivery', {messageId, senderId});
+        this.socket?.emit('confirmDelivery', { messageId, senderId });
     }
 
     /**
@@ -179,6 +180,13 @@ class SocketService {
      */
     getOnlineUsers(): void {
         this.socket?.emit('getOnlineUsers');
+    }
+
+    /**
+     * Delete a message for everyone
+     */
+    deleteMessage(messageId: string): void {
+        this.socket?.emit('deleteMessage', { messageId });
     }
 
     /**
@@ -208,8 +216,8 @@ class SocketService {
         try {
             const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
                 method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({refreshToken}),
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ refreshToken }),
             });
 
             if (!response.ok) {

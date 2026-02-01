@@ -36,7 +36,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private jwtService: JwtService,
     private configService: ConfigService,
     private chatService: ChatService,
-  ) {}
+  ) { }
 
   async handleConnection(client: Socket) {
     try {
@@ -99,6 +99,12 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       return { error: 'Invalid message data' };
     }
 
+    // Check if either user has blocked the other
+    const isBlocked = await this.chatService.isBlocked(senderId, data.receiverId);
+    if (isBlocked) {
+      return { error: 'Cannot send message to this user' };
+    }
+
     // Save message to database (status: SENT)
     const message = await this.chatService.createMessage(
       senderId,
@@ -141,6 +147,28 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     });
 
     return { success: true };
+  }
+
+  @SubscribeMessage('deleteMessage')
+  async handleDeleteMessage(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: { messageId: string },
+  ) {
+    const auth = client as AuthenticatedSocket;
+    const deleted = await this.chatService.deleteMessageForEveryone(
+      data.messageId,
+      auth.userId,
+    );
+
+    this.server.to(`user:${deleted.senderId}`)
+      .emit('messageDeleted', {
+        messageId: deleted.id,
+      });
+
+    this.server.to(`user:${deleted.receiverId}`).emit('messageDeleted', {
+      messageId: deleted.id,
+    });
+    return;
   }
 
   @SubscribeMessage('typing')
